@@ -1,5 +1,6 @@
 import os
-
+import pandas as pd
+from models.Goodsdataprocessing import get_goods_dict
 
 
 train_usersdata_path = 'E:/Complex Designer 3/train/traindata_user'
@@ -26,7 +27,7 @@ def get_data(data_files, root):
 train_userdata = get_data(train_usersdata_files, train_usersdata_path)
 users_info = {}
 goods_info = {}
-# train_goodsdata = get_data(train_goodsdata_files, train_goodsdata_path)
+goods_dict = get_goods_dict()
 """
 1、设想合并每个用户对相同物品的行为,由于物品的浏览记录是按时间排序的,故相同的商品会合并到最后一次的请求中
 2、由于目前对所有用户对该商品的偏好情况未知,现假设如下情况表示用户对商品存在兴趣：
@@ -49,23 +50,52 @@ for data in train_userdata:
             users_info[data[0]][data[1]][1] = str(int(users_info[data[0]][data[1]][1]) + int(data[3]))
             users_info[data[0]][data[1]][2] = str(int(users_info[data[0]][data[1]][2]) + int(data[4]))
             users_info[data[0]][data[1]][3] = str(int(users_info[data[0]][data[1]][3]) + int(data[5]))
-    if data[0] == '51804006b6d8110a7e121ca3e1e5fcf5':
-        print(data)
-print("division---------")
+    # if data[0] == '51804006b6d8110a7e121ca3e1e5fcf5':
+    #     print(data)
+# print("division---------")
 
+"""
+按照设想对原数据集每条数据进行标注
+"""
 for k, v in users_info.items():
     for m, n in v.items():
         if int(n[0]) > 1 or int(n[1]) != 0 or int(n[2]) != 0 or int(n[3]) != 0:
             n.append('1')
         else:
             n.append('0')
-info = users_info['51804006b6d8110a7e121ca3e1e5fcf5']
-for k, v in info.items():
-    print(k, v)
-
+"""
+users_info like this below:
+    {userid_1: {good_id1: [info_1], good_id2: [info_2]}}
+"""
+processing_data = []
 for k, v in users_info.items():
     for m, n in v.items():
-        print(m, n)
+        good_info = goods_dict[m]
+        one_info = [k, m]
+        for a_info in good_info:
+            one_info.append(a_info)
+        for item in n:
+            one_info.append(item)
+        processing_data.append(one_info)
+
+print(processing_data)
+with open('dataset_v1.csv', 'w') as fp:
+    line = ''
+    for a_data in processing_data:
+        for i in range(len(a_data)):
+            if i != len(a_data)-1:
+                line += a_data[i] + ','
+            else:
+                line += a_data[i]
+        line += '\n'
+    fp.write(line)
+
+"""
+至此,数据集按设想处理完成
+由于数据量比较大，初次仅对18万多个用户请求记录进行训练尝试
+"""
+
+
 # print(users_info['51804006b6d8110a7e121ca3e1e5fcf5'])
 
 """
